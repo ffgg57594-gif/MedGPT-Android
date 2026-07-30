@@ -3,7 +3,7 @@
 # ============================================================
 
 # ---- Keep JavaScript Interface (called from WebView JS) ----
--keepclassmembers class com.medgpt.app.ApiBridge {
+-keepclassmembers class com.drarabi.medvision.ApiBridge {
     @android.webkit.JavascriptInterface <methods>;
 }
 -keepclassmembers class * {
@@ -11,13 +11,13 @@
 }
 
 # ---- Keep native methods (JNI) ----
--keepclasseswithmembernames class com.medgpt.app.SecurityManager {
+-keepclasseswithmembernames class com.drarabi.medvision.SecurityManager {
     native <methods>;
 }
--keep class com.medgpt.app.SecurityManager { *; }
+-keep class com.drarabi.medvision.SecurityManager { *; }
 
 # ---- Keep AssetsProvider (embedded HTML) ----
--keep class com.medgpt.app.AssetsProvider { *; }
+-keep class com.drarabi.medvision.AssetsProvider { *; }
 
 # ---- Keep WebView classes ----
 -keep class android.webkit.** { *; }

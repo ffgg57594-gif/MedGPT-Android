@@ -63,11 +63,8 @@ jobs:
           path: MedGPT.apk
           if-no-files-found: error
 
-      - name: Upload APK as Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Upload APK as Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: MedGPT v1.0.${{ github.run_number }}
           files: MedGPT.apk
-          generate_release_notes: true

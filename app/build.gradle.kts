@@ -3,16 +3,16 @@ plugins {
 }
 
 android {
-    namespace = "com.medgpt.app"
-    compileSdk = 34
+    namespace = "com.drarabi.medvision"
+    compileSdk = 36
     ndkVersion = "25.2.9519653"
 
     defaultConfig {
-        applicationId = "com.medgpt.app"
+        applicationId = "com.drarabi.medvision"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 36
+        versionCode = 2
+        versionName = "1.1.2"
 
         // NDK/CMake for native security layer
         externalNativeBuild {

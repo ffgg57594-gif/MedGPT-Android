@@ -118,8 +118,9 @@ public class MainActivity extends AppCompatActivity {
         // Request permissions on start
         requestNeededPermissions();
 
-        // Load the app from assets
-        webView.loadUrl("file:///android_asset/index.html");
+        // Load the app from embedded assets (compiled into DEX)
+        webView.loadDataWithBaseURL("file:///android_asset/",
+                AssetsProvider.getIndexHtml(), "text/html", "UTF-8", null);
     }
 
     private void requestNeededPermissions() {
@@ -241,7 +242,8 @@ public class MainActivity extends AppCompatActivity {
             if (granted) {
                 // Retry - trigger the file chooser again
                 if (filePathCallback != null) {
-                    webView.loadUrl("file:///android_asset/index.html");
+                    webView.loadDataWithBaseURL("file:///android_asset/",
+                            AssetsProvider.getIndexHtml(), "text/html", "UTF-8", null);
                     Toast.makeText(this, "Camera permission granted. Please try again.",
                             Toast.LENGTH_SHORT).show();
                 }

@@ -102,27 +102,13 @@ public class MainActivity extends AppCompatActivity {
                 // Create intent for file selection
                 Intent intent = fileChooserParams.createIntent();
 
-                // Check if camera capture is requested (capture="environment")
-                boolean cameraRequested = false;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    if (fileChooserParams.getCapture() != null) {
-                        cameraRequested = true;
-                    }
-                }
-
                 // Check and request permissions
-                if (cameraRequested) {
-                    if (checkCameraPermission()) {
-                        openCameraAndGallery(intent);
-                    } else {
-                        requestCameraPermission();
-                    }
+                if (checkCameraPermission() && checkStoragePermission()) {
+                    openCameraAndGallery(intent);
+                } else if (!checkCameraPermission()) {
+                    requestCameraPermission();
                 } else {
-                    if (checkStoragePermission()) {
-                        startActivityForResult(intent, REQUEST_FILE_CHOOSER);
-                    } else {
-                        requestStoragePermission();
-                    }
+                    startActivityForResult(intent, REQUEST_FILE_CHOOSER);
                 }
 
                 return true;

@@ -1,24 +1,61 @@
-# MedGPT App - ProGuard/R8 Rules
+# ============================================================
+# MedGPT App - Hardened ProGuard/R8 Rules
+# ============================================================
 
-# Keep JavaScript Interface methods (called from WebView JS)
+# ---- Keep JavaScript Interface (called from WebView JS) ----
 -keepclassmembers class com.medgpt.app.ApiBridge {
     @android.webkit.JavascriptInterface <methods>;
 }
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
 
-# Keep the AssetsProvider (used to serve embedded HTML)
+# ---- Keep native methods (JNI) ----
+-keepclasseswithmembernames class com.medgpt.app.SecurityManager {
+    native <methods>;
+}
+-keep class com.medgpt.app.SecurityManager { *; }
+
+# ---- Keep AssetsProvider (embedded HTML) ----
 -keep class com.medgpt.app.AssetsProvider { *; }
 
-# Keep WebView class usage
+# ---- Keep WebView classes ----
 -keep class android.webkit.** { *; }
+-dontwarn android.webkit.**
 
-# Keep JSON parsing
+# ---- Keep JSON ----
 -keep class org.json.** { *; }
 -dontwarn org.json.**
 
-# General Android rules
+# ---- Keep Play Integrity ----
+-keep class com.google.android.play.integrity.** { *; }
+-dontwarn com.google.android.play.integrity.**
+
+# ---- Aggressive obfuscation ----
+-optimizationpasses 5
+-allowaccessmodification
+-repackageclasses 'm'
+-flattenpackagehierarchy
+-overloadaggressively
+
+# ---- Remove logging in release ----
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}
+
+# ---- Keep annotations ----
 -keepattributes *Annotation*
 -keepattributes JavascriptInterface
 -keepattributes SourceFile,LineNumberTable
+-keepattributes Exceptions,InnerClasses,Signature,Deprecated,
+                EnclosingMethod,*Annotation*
 
-# Keep all classes in our app package (safety net)
+# ---- General Android rules ----
 -keep class com.medgpt.app.** { *; }
+-dontwarn com.medgpt.app.**
+
+# ---- Crash handling ----
+-keep class com.medgpt.app.CrashHandler { *; }

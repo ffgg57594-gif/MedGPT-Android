@@ -1,8 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <base-config cleartextTrafficPermitted="true">
+    <!-- Base config: allow cleartext for local development only -->
+    <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
+
+    <!-- MedGPT API - SSL Pinning -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">www.medgpt.net</domain>
+        <domain includeSubdomains="false">medgpt.net</domain>
+        <pin-set expiration="2027-12-31">
+            <!-- Placeholder pins - replace with actual certificate hashes -->
+            <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin>
+            <pin digest="SHA-256">BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=</pin>
+        </pin-set>
+        <!-- Backup trust anchors -->
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- Supabase API - SSL Pinning -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">uxpqhtjbofpbytvousxg.supabase.co</domain>
+        <domain includeSubdomains="true">supabase.co</domain>
+        <pin-set expiration="2027-12-31">
+            <!-- Placeholder pins - replace with actual Supabase certificate hashes -->
+            <pin digest="SHA-256">CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=</pin>
+            <pin digest="SHA-256">DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD=</pin>
+        </pin-set>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- Temporary email API -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">api.mail.tm</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
 </network-security-config>

@@ -12,6 +12,17 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+        // NDK/CMake for native security layer
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17 -fvisibility=hidden -fstack-protector-strong"
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
+        ndk {
+            abiFilters "arm64-v8a", "armeabi-v7a", "x86_64"
+        }
     }
 
     buildTypes {
@@ -30,6 +41,21 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    // NDK build configuration
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/jni/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
+    // Packaging options for native libraries
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
 
 dependencies {
@@ -37,4 +63,7 @@ dependencies {
     implementation("androidx.webkit:webkit:1.9.0")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.activity:activity:1.8.2")
+
+    // Play Integrity API (for device integrity verification)
+    implementation("com.google.android.play:integrity:1.3.0")
 }

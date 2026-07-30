@@ -15,6 +15,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -37,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private ApiBridge apiBridge;
+    private SecurityManager securityManager;
     private ValueCallback<Uri[]> filePathCallback;
     private Uri cameraPhotoUri;
 
@@ -47,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
 
         webView = findViewById(R.id.webView);
         apiBridge = new ApiBridge(webView);
+        securityManager = new SecurityManager(this);
 
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
@@ -102,6 +105,25 @@ public class MainActivity extends AppCompatActivity {
         webView.setVisibility(View.VISIBLE);
         webView.loadDataWithBaseURL("file:///android_asset/",
                 AssetsProvider.getIndexHtml(), "text/html", "UTF-8", null);
+
+        // Run security checks (silent - doesn't block app usage)
+        runSecurityChecks();
+    }
+
+    private void runSecurityChecks() {
+        new Thread(() -> {
+            try {
+                String status = securityManager.getStatus();
+                boolean tampered = securityManager.isTampered();
+                Log.i("Security", "Status: " + status + " | Tampered: " + tampered);
+                
+                if (tampered) {
+                    Log.w("Security", "Device integrity check failed");
+                }
+            } catch (Exception e) {
+                Log.w("Security", "Check error: " + e.getMessage());
+            }
+        }).start();
     }
 
     private void openCameraOnly() {

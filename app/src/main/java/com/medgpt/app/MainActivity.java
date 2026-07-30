@@ -104,8 +104,10 @@ public class MainActivity extends AppCompatActivity {
 
                 // Check if camera capture is requested (capture="environment")
                 boolean cameraRequested = false;
-                if (fileChooserParams.getCapture() != null) {
-                    cameraRequested = true;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    if (fileChooserParams.getCapture() != null) {
+                        cameraRequested = true;
+                    }
                 }
 
                 // Check and request permissions

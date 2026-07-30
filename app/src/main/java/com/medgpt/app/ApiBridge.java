@@ -1,4 +1,4 @@
-package com.medgpt.app;
+package com.drarabi.medvision;
 
 import android.os.Build;
 import android.util.Base64;

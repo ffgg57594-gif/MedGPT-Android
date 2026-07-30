@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK + AAB
 
 on:
   push:
@@ -27,7 +27,6 @@ jobs:
       - name: Accept SDK licenses and install components
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
-          # Install required SDK components + NDK + CMake
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
             "platforms;android-34" \
             "build-tools;34.0.0" \
@@ -36,12 +35,12 @@ jobs:
             2>/dev/null || true
           echo "sdk.dir=$ANDROID_HOME" > local.properties
 
-      - name: Build APK
+      - name: Build APK + AAB
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease bundleRelease --no-daemon
 
-      - name: Sign APK with debug key
+      - name: Sign & Prepare APK
         run: |
           if [ -f app/build/outputs/apk/release/app-release-unsigned.apk ]; then
             keytool -genkey -v -keystore $HOME/debug.keystore -alias debug \
@@ -56,15 +55,33 @@ jobs:
               app/build/outputs/apk/release/app-release-unsigned.apk
           fi
 
-      - name: Upload APK Artifact
+      - name: Sign & Prepare AAB
+        run: |
+          if [ -f app/build/outputs/bundle/release/app-release.aab ]; then
+            cp app/build/outputs/bundle/release/app-release.aab ${{ github.workspace }}/MedVisionAI.aab
+            jarsigner -keystore $HOME/debug.keystore -storepass android \
+              -keypass android -digestalg SHA-256 -sigalg SHA256withRSA \
+              ${{ github.workspace }}/MedVisionAI.aab debug
+          fi
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: MedVisionAI-APK
           path: MedVisionAI.apk
           if-no-files-found: warn
 
-      - name: Upload APK as Release (on tag)
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: MedVisionAI-AAB
+          path: MedVisionAI.aab
+          if-no-files-found: warn
+
+      - name: Release (on tag)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: MedVisionAI.apk
+          files: |
+            MedVisionAI.apk
+            MedVisionAI.aab

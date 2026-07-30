@@ -25,10 +25,8 @@ public class ApiBridge {
     private static final String FOLLOWUP_URL = "https://www.medgpt.net/api/followup";
 
     private final WebView webView;
-    private final AppCompatActivity activity;
 
-    public ApiBridge(AppCompatActivity activity, WebView webView) {
-        this.activity = activity;
+    public ApiBridge(WebView webView) {
         this.webView = webView;
     }
 

@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         webView = findViewById(R.id.webView);
-        apiBridge = new ApiBridge(this, webView);
+        apiBridge = new ApiBridge(webView);
 
         // Configure WebView
         WebSettings settings = webView.getSettings();

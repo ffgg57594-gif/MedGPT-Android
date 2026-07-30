@@ -649,32 +649,32 @@ jboolean checkAllTamper() {
 extern "C" {
 
 JNIEXPORT jboolean JNICALL
-Java_com_medgpt_app_SecurityManager_nativeCheckRoot(JNIEnv* env, jobject thiz) {
+Java_com_drarabi_medvision_SecurityManager_nativeCheckRoot(JNIEnv* env, jobject thiz) {
     return checkRootDetected();
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_medgpt_app_SecurityManager_nativeCheckFrida(JNIEnv* env, jobject thiz) {
+Java_com_drarabi_medvision_SecurityManager_nativeCheckFrida(JNIEnv* env, jobject thiz) {
     return checkFridaDetected();
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_medgpt_app_SecurityManager_nativeCheckDebug(JNIEnv* env, jobject thiz) {
+Java_com_drarabi_medvision_SecurityManager_nativeCheckDebug(JNIEnv* env, jobject thiz) {
     return checkDebugDetected();
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_medgpt_app_SecurityManager_nativeCheckEmulator(JNIEnv* env, jobject thiz) {
+Java_com_drarabi_medvision_SecurityManager_nativeCheckEmulator(JNIEnv* env, jobject thiz) {
     return checkEmulatorDetected();
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_medgpt_app_SecurityManager_nativeCheckXposed(JNIEnv* env, jobject thiz) {
+Java_com_drarabi_medvision_SecurityManager_nativeCheckXposed(JNIEnv* env, jobject thiz) {
     return checkXposedDetected();
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_medgpt_app_SecurityManager_nativeCheckApkIntegrity(JNIEnv* env, jobject thiz,
+Java_com_drarabi_medvision_SecurityManager_nativeCheckApkIntegrity(JNIEnv* env, jobject thiz,
                                                              jstring apkPath) {
     const char* path = env->GetStringUTFChars(apkPath, nullptr);
     jboolean result = checkApkIntegrity(path);
@@ -683,12 +683,12 @@ Java_com_medgpt_app_SecurityManager_nativeCheckApkIntegrity(JNIEnv* env, jobject
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_medgpt_app_SecurityManager_nativeCheckAll(JNIEnv* env, jobject thiz) {
+Java_com_drarabi_medvision_SecurityManager_nativeCheckAll(JNIEnv* env, jobject thiz) {
     return checkAllTamper();
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_medgpt_app_SecurityManager_nativeGetStatus(JNIEnv* env, jobject thiz) {
+Java_com_drarabi_medvision_SecurityManager_nativeGetStatus(JNIEnv* env, jobject thiz) {
     std::string status;
     status += "root:" + std::to_string(checkRootDetected());
     status += ",frida:" + std::to_string(checkFridaDetected());

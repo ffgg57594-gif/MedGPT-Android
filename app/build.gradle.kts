@@ -16,12 +16,14 @@ android {
         // NDK/CMake for native security layer
         externalNativeBuild {
             cmake {
-                cppFlags "-std=c++17 -fvisibility=hidden -fstack-protector-strong"
-                arguments "-DANDROID_STL=c++_shared"
+                cppFlags += "-std=c++17"
+                cppFlags += "-fvisibility=hidden"
+                cppFlags += "-fstack-protector-strong"
+                arguments += "-DANDROID_STL=c++_shared"
             }
         }
         ndk {
-            abiFilters "arm64-v8a", "armeabi-v7a", "x86_64"
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
         }
     }
 

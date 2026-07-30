@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MedVision AI</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js?v=2"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        arabic: ['Cairo', 'sans-serif']
+                    },
+                    colors: { 
+                        medical: { 50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 300: '#5eead4', 400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e', 800: '#115e59', 900: '#134e4a' },
+                        surface: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1' }
+                    },
+                    boxShadow: {
+                        'premium': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'float': '0 -10px 40px -10px rgba(0,0,0,0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; height: 100dvh; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scroll:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
+        
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    </style>
+</head>
+<body class="bg-surface-50 text-slate-800 w-screen overflow-hidden flex">
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden md:hidden transition-opacity"></div>
+
+    <!-- Custom Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-6 max-w-[320px] w-full mx-4 shadow-2xl transform scale-95 transition-all duration-300" id="deleteModalContent" dir="rtl">
+            <div class="w-14 h-14 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mb-4 mx-auto shadow-inner border border-rose-100">
+                <i data-lucide="trash-2" class="w-7 h-7"></i>
+            </div>
+            <h3 class="text-xl font-arabic font-bold text-slate-900 text-center mb-2">حذف المحادثة</h3>
+            <p class="text-sm font-arabic text-slate-500 text-center mb-6 leading-relaxed">هل أنت متأكد من رغبتك في حذف هذه الاستشارة بشكل نهائي؟ لا يمكن التراجع عن هذا الإجراء.</p>
+            <div class="flex gap-3 font-arabic">
+                <button id="cancelDeleteBtn" class="flex-1 px-4 py-3 rounded-xl border border-surface-200 text-slate-700 font-bold hover:bg-slate-50 transition-colors">إلغاء</button>
+                <button id="confirmDeleteBtn" class="flex-1 px-4 py-3 rounded-xl bg-rose-500 text-white font-bold hover:bg-rose-600 transition-colors shadow-sm shadow-rose-200">نعم، احذف</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR: Chat & Consultation History -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-slate-950 text-slate-300 transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col shadow-2xl md:shadow-none border-r border-slate-800">
+        <div class="p-5 border-b border-slate-800/80 flex items-center justify-between">
+            <div class="flex items-center gap-3 text-white">
+                <div class="bg-gradient-to-br from-medical-400 to-medical-600 p-2.5 rounded-xl shadow-lg shadow-medical-500/20">
+                    <i data-lucide="activity" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base tracking-tight text-white">MedVision AI</h1>
+                    <p class="text-[10px] text-slate-400 font-medium tracking-wider uppercase">Clinical AI Hub</p>
+                </div>
+            </div>
+            <button id="closeSidebarBtn" class="md:hidden text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <div class="p-4">
+            <button onclick="startNewSession()" class="w-full bg-slate-800 hover:bg-medical-600 text-white rounded-xl py-3.5 px-4 flex items-center justify-center gap-2 font-semibold text-sm transition-all duration-200 shadow-premium active:scale-95 group border border-slate-700 hover:border-medical-500">
+                <i data-lucide="plus" class="w-4 h-4 group-hover:rotate-90 transition-transform duration-300"></i> New Consultation
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scroll px-3 py-2 space-y-1.5" id="historyList">
+            <!-- Dynamic History Loaded Here -->
+        </div>
+        
+        <div class="p-4 border-t border-slate-800/80 flex flex-col items-center justify-center gap-2 bg-slate-900/50">
+            <div class="text-[10px] text-slate-500 flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-medical-500"></i> Secure Local Storage
+            </div>
+            <div class="text-[11px] font-arabic font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-emerald-400 flex items-center gap-1">
+                مع تحيات د / محمد عربي <i data-lucide="sparkles" class="w-3 h-3 text-emerald-400"></i>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN VIEW AREA -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative bg-white min-w-0">
+        
+        <!-- Header -->
+        <header class="glass-panel px-4 py-3 md:py-4 border-b border-surface-200 flex items-center justify-between shrink-0 z-20 sticky top-0 shadow-sm">
+            <div class="flex items-center gap-3">
+                <button id="openSidebarBtn" class="md:hidden text-slate-500 hover:text-slate-900 p-2 rounded-lg bg-surface-100 transition-colors active:scale-95">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div class="flex flex-col justify-center">
+                    <h2 class="font-bold text-slate-900 text-sm md:text-base leading-tight" id="headerTitle">New Consultation</h2>
+                    <p class="text-[11px] text-slate-500 font-medium mt-0.5" id="headerSubtitle">Clinical Diagnostic Workspace</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Chat Stream & Workspace -->
+        <div class="flex-1 overflow-y-auto custom-scroll p-4 md:p-6 lg:p-8 bg-slate-50/50 min-h-0 scroll-smooth" id="chatStream">
+            
+            <div class="max-w-3xl mx-auto w-full flex flex-col gap-6 pb-4">
+                
+                <!-- Settings Configuration Panel -->
+                <div id="settingsPanel" class="bg-white p-5 md:p-6 rounded-2xl shadow-premium border border-surface-200 fade-in w-full">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="settings-2" class="w-4 h-4 text-medical-500"></i> Configuration
+                    </h3>
+                    
+                    <!-- Modes -->
+                    <div class="flex bg-surface-100 p-1.5 rounded-xl mb-5 border border-surface-200">
+                        <button id="modeStandard" class="flex-1 py-2.5 text-xs md:text-sm font-bold rounded-lg bg-white shadow-sm text-medical-600 transition-all flex justify-center items-center gap-2 border border-surface-200">
+                            <i data-lucide="image" class="w-4 h-4"></i> Image Analysis
+                        </button>
+                        <button id="modePro" class="flex-1 py-2.5 text-xs md:text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 transition-all flex justify-center items-center gap-2 border border-transparent">
+                            <i data-lucide="stethoscope" class="w-4 h-4"></i> Doctor's Assistant
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Modality</label>
+                            <select id="modalitySelect" class="w-full bg-surface-50 border border-surface-200 text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 text-slate-700 transition-shadow font-medium appearance-none cursor-pointer">
+                                <option value="auto">Auto-Detect</option>
+                                <option value="cxr">Chest X-Ray (CXR)</option>
+                                <option value="ct">CT Scan</option>
+                                <option value="mri">MRI</option>
+                                <option value="us">Ultrasound (US)</option>
+                                <option value="derm">Dermatology (Derm)</option>
+                                <option value="pathology">Pathology</option>
+                                <option value="clinical_report">Clinical Report</option>
+                                <option value="others">Others</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Provider Engine</label>
+                            <select id="providerSelect" class="w-full bg-surface-50 border border-surface-200 text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500 text-slate-700 transition-shadow font-medium appearance-none cursor-pointer">
+                                <option value="gemini">Google Gemini (Fast)</option>
+                                <option value="openai">OpenAI (GPT-4 Vision)</option>
+                                <option value="openai_pro">OpenAI Pro (Detailed)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Pro Mode Note -->
+                    <div id="proModeNote" class="hidden mt-4 bg-blue-50/50 text-blue-800 p-4 rounded-xl text-xs md:text-sm flex gap-3 items-start border border-blue-100">
+                        <div class="bg-blue-100 p-1.5 rounded-lg shrink-0 mt-0.5"><i data-lucide="info" class="w-4 h-4 text-blue-600"></i></div>
+                        <p class="leading-relaxed font-medium">
+                            <b>Doctor Assistant Mode:</b> Images are optional. You can directly enter patient history, symptoms, exam findings, and the clinical question you want analyzed.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Chat Stream Messages -->
+                <div id="messageArea" class="space-y-6 w-full">
+                    <!-- Welcome message generated by JS -->
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Sticky Input Control Bar -->
+        <div id="inputAreaContainer" class="shrink-0 bg-white border-t border-surface-200 z-30 shadow-float">
+            <div class="max-w-3xl mx-auto w-full px-4 py-3 md:py-4">
+                
+                <div class="bg-surface-50 rounded-2xl border border-surface-200 p-2 md:p-3 transition-all duration-200 focus-within:bg-white focus-within:border-medical-400 focus-within:ring-4 focus-within:ring-medical-500/10 shadow-sm">
+                    
+                    <!-- Image Previews Container -->
+                    <div id="imagePreviewContainer" class="hidden mb-3 pb-3 flex gap-3 overflow-x-auto custom-scroll border-b border-surface-200 px-2"></div>
+
+                    <div class="flex items-end gap-2 md:gap-3">
+                        <div class="flex-1 relative">
+                            <textarea id="specialConcernInput" rows="1" placeholder="Type clinical notes or ask follow-up.." class="w-full bg-transparent border-0 px-3 py-2.5 text-sm md:text-base focus:outline-none focus:ring-0 resize-none max-h-40 custom-scroll text-slate-800 placeholder-slate-400" style="min-height: 44px;"></textarea>
+                        </div>
+
+                        <div class="flex items-center gap-1.5 shrink-0 pb-1 pr-1">
+                            <!-- Attachment Buttons Container (Hidden during follow-up) -->
+                            <div id="attachmentBtns" class="flex items-center gap-1.5">
+                                <label class="cursor-pointer text-slate-400 hover:text-medical-600 hover:bg-medical-50 p-2.5 rounded-xl transition-all duration-200 active:scale-95 group" title="Camera">
+                                    <i data-lucide="camera" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                                    <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" />
+                                </label>
+
+                                <label class="cursor-pointer text-slate-400 hover:text-medical-600 hover:bg-medical-50 p-2.5 rounded-xl transition-all duration-200 active:scale-95 group" title="Gallery">
+                                    <i data-lucide="image-plus" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                                    <input type="file" id="imageInput" accept="image/jpeg, image/png, image/webp" multiple class="hidden" />
+                                </label>
+                            </div>
+                            
+                            <button id="sendBtn" disabled class="bg-medical-600 hover:bg-medical-700 disabled:bg-surface-200 disabled:text-slate-400 text-white p-3 rounded-xl transition-all duration-200 shadow-sm active:scale-95 flex items-center justify-center ml-1">
+                                <i data-lucide="send-horizonal" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer & Signature -->
+                <div class="text-center mt-3.5 flex flex-col items-center justify-center gap-2 pb-1">
+                    <p class="text-[10px] text-slate-400 font-medium">MedVision AI can make mistakes. Always verify clinical findings.</p>
+                    
+                    <div class="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-full bg-surface-50 border border-surface-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] hover:shadow-md transition-all">
+                        <span class="text-xs font-arabic font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-medical-500 tracking-wide">
+                            مع تحيات د / محمد عربي
+                        </span>
+                        <i data-lucide="heart-pulse" class="w-3.5 h-3.5 text-rose-500 animate-pulse drop-shadow-sm"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cHFodGpib2ZwYnl0dm91c3hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0NjYyMzMsImV4cCI6MjA4MTA0MjIzM30.QfMCrQdO9RQyJ3tKxFdlqfXSIn6hmrODsQBx6J11LCI";
+        const supabaseHeaders = {
+            'authorization': `Bearer ${SUPABASE_KEY}`,
+            'apikey': SUPABASE_KEY,
+            'content-type': 'application/json;charset=UTF-8',
+            'x-supabase-api-version': '2024-01-01'
+        };
+
+        // --- App State ---
+        let appState = {
+            email: null,
+            password: null,
+            supabaseAccessToken: null,
+            selectedImages: [],
+            mode: 'standard',
+            modality: 'auto',
+            provider: 'gemini',
+            isAuthDone: false, // Indicates if we have a fresh token in memory for this action
+            currentSessionId: null,
+            currentRequestId: null 
+        };
+
+        const chatStream = document.getElementById('chatStream');
+        const messageArea = document.getElementById('messageArea');
+        const settingsPanel = document.getElementById('settingsPanel');
+        
+        const modeStandardBtn = document.getElementById('modeStandard');
+        const modeProBtn = document.getElementById('modePro');
+        const proModeNote = document.getElementById('proModeNote');
+        const modalitySelect = document.getElementById('modalitySelect');
+        const providerSelect = document.getElementById('providerSelect');
+
+        const imageInput = document.getElementById('imageInput');
+        const cameraInput = document.getElementById('cameraInput');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        const specialConcernInput = document.getElementById('specialConcernInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const inputAreaContainer = document.getElementById('inputAreaContainer');
+        const attachmentBtns = document.getElementById('attachmentBtns');
+        
+        const headerTitle = document.getElementById('headerTitle');
+        const headerSubtitle = document.getElementById('headerSubtitle');
+        const historyList = document.getElementById('historyList');
+
+        // Sidebar Elements
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const openSidebarBtn = document.getElementById('openSidebarBtn');
+        const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+
+        // Modal Elements
+        let sessionToDeleteId = null;
+        const deleteModal = document.getElementById('deleteModal');
+        const deleteModalContent = document.getElementById('deleteModalContent');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+        function openDeleteModal(id) {
+            sessionToDeleteId = id;
+            deleteModal.classList.remove('hidden');
+            void deleteModal.offsetWidth;
+            deleteModal.classList.remove('opacity-0');
+            deleteModalContent.classList.remove('scale-95');
+        }
+
+        function closeDeleteModal() {
+            deleteModal.classList.add('opacity-0');
+            deleteModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                deleteModal.classList.add('hidden');
+                sessionToDeleteId = null;
+            }, 300);
+        }
+
+        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+        deleteModal.addEventListener('click', (e) => {
+            if (e.target === deleteModal) closeDeleteModal();
+        });
+
+        confirmDeleteBtn.addEventListener('click', () => {
+            if (sessionToDeleteId) {
+                performDeleteSession(sessionToDeleteId);
+                closeDeleteModal();
+            }
+        });
+
+        function performDeleteSession(id) {
+            let sessions = getSavedSessions();
+            sessions = sessions.filter(s => s.id !== id);
+            localStorage.setItem("medgpt_sessions", JSON.stringify(sessions));
+
+            if (appState.currentSessionId === id) {
+                appState.currentSessionId = null;
+                appState.currentRequestId = null;
+                messageArea.innerHTML = "";
+                startNewSession();
+            } else {
+                renderSidebar();
+            }
+        }
+
+        function toggleSidebar() {
+            const isClosed = sidebar.classList.contains('-translate-x-full');
+            if (isClosed) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebarOverlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+            }
+        }
+        openSidebarBtn.addEventListener('click', toggleSidebar);
+        closeSidebarBtn.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+        const randStr = (length) => Array.from({length}, () => 'abcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 36))).join('');
+
+        function logMsg(msg, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${msg}`);
+        }
+
+        specialConcernInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+            if(this.value === '') this.style.height = '44px';
+        });
+
+        // --- Manage UI Mode (Follow up vs New Analysis) ---
+        function updateUIMode() {
+            if (appState.currentRequestId) {
+                attachmentBtns.classList.add('hidden');
+                specialConcernInput.placeholder = 'Type follow-up question here...';
+            } else {
+                attachmentBtns.classList.remove('hidden');
+                specialConcernInput.placeholder = appState.mode === 'standard' ? 'Type clinical notes..' : 'Enter history..';
+            }
+            checkSubmitState();
+        }
+
+        // --- Local Storage Sessions ---
+        function getSavedSessions() {
+            const saved = localStorage.getItem('medgpt_sessions');
+            return saved ? JSON.parse(saved) : [];
+        }
+
+        function updateSessionTitle(sessionId, newTitle) {
+            let sessions = getSavedSessions();
+            let sessionIndex = sessions.findIndex(s => s.id === sessionId);
+            if (sessionIndex !== -1) {
+                sessions[sessionIndex].title = newTitle;
+                localStorage.setItem('medgpt_sessions', JSON.stringify(sessions));
+                renderSidebar();
+                if (appState.currentSessionId === sessionId) {
+                    headerTitle.textContent = newTitle;
+                }
+            }
+        }
+
+        function saveCurrentSessionData(role, htmlContent) {
+            if (!appState.currentSessionId) return;
+            let safeHtml = htmlContent.replace(/src="blob:.*?"/g, 'src="data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100\' height=\'100\' fill=\'%23f1f5f9\'/><text x=\'50\' y=\'50\' font-family=\'Arial\' font-size=\'10\' fill=\'#64748b\' text-anchor=\'middle\' dominant-baseline=\'middle\'>Image</text></svg>"');
+
+            let sessions = getSavedSessions();
+            let sessionIndex = sessions.findIndex(s => s.id === appState.currentSessionId);
+            
+            if (sessionIndex !== -1) {
+                sessions[sessionIndex].messages.push({ role, content: safeHtml });
+                sessions[sessionIndex].request_id = appState.currentRequestId;
+            } else {
+                let title = appState.mode === 'pro' ? 'Clinical Assistant Consultation' : 'Image Analysis Case';
+                sessions.unshift({
+                    id: appState.currentSessionId,
+                    request_id: appState.currentRequestId,
+                    title: title,
+                    date: new Date().toISOString(),
+                    mode: appState.mode,
+                    messages: [{ role, content: safeHtml }]
+                });
+            }
+            localStorage.setItem('medgpt_sessions', JSON.stringify(sessions));
+            renderSidebar();
+        }
+
+        function renderSidebar() {
+            const sessions = getSavedSessions();
+            historyList.innerHTML = '';
+            if(sessions.length === 0) {
+                historyList.innerHTML = '<div class="text-xs text-slate-500 text-center py-8 font-arabic">لا توجد محادثات سابقة.</div>';
+                return;
+            }
+
+            sessions.forEach(s => {
+                const btn = document.createElement('button');
+                const isSelected = s.id === appState.currentSessionId;
+                btn.className = `w-full text-left p-3.5 rounded-xl mb-2 transition-all flex flex-col gap-1 border ${isSelected ? 'bg-slate-800 border-medical-500/50 text-white shadow-sm' : 'bg-slate-900 border-transparent hover:bg-slate-800/80 text-slate-300'}`;
+                const date = new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                const icon = s.mode === 'pro' ? 'stethoscope' : 'image';
+                
+                btn.innerHTML = `
+<div class="flex items-center justify-between">
+    <div class="flex items-center gap-2.5 text-sm font-semibold truncate flex-1">
+        <i data-lucide="${icon}" class="w-4 h-4 text-medical-400 shrink-0"></i>
+        <span class="truncate">${s.title}</span>
+    </div>
+
+    <button class="delete-chat-btn text-slate-500 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors"
+        onclick="event.stopPropagation(); openDeleteModal('${s.id}')" title="حذف">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+    </button>
+</div>
+
+<div class="text-[10px] text-slate-500 pl-6 font-medium">${date}</div>
+`;
+                btn.onclick = () => loadSession(s.id);
+                historyList.appendChild(btn);
+            });
+
+            lucide.createIcons();
+        }
+
+        function loadSession(id) {
+            const sessions = getSavedSessions();
+            const session = sessions.find(s => s.id === id);
+            if(!session) return;
+
+            appState.currentSessionId = id;
+            appState.mode = session.mode;
+            appState.currentRequestId = session.request_id || null;
+            
+            settingsPanel.classList.add('hidden');
+            headerTitle.textContent = session.title;
+            headerSubtitle.textContent = "Archived Consultation";
+
+            messageArea.innerHTML = '';
+            session.messages.forEach(msg => {
+                let bubble = document.createElement('div');
+                if(msg.role === 'user') {
+                    bubble.className = 'flex items-start gap-3 justify-end fade-in';
+                    bubble.innerHTML = `<div class="bg-medical-600 text-white rounded-2xl p-4 text-sm max-w-[85%] shadow-sm space-y-2 leading-relaxed">${msg.content}</div>
+                    <div class="bg-slate-200 p-2.5 rounded-full text-slate-700 shrink-0 shadow-sm"><i data-lucide="user" class="w-5 h-5"></i></div>`;
+                } else {
+                    bubble.className = 'flex items-start gap-3 fade-in';
+                    bubble.innerHTML = `<div class="bg-gradient-to-br from-medical-500 to-medical-700 p-2.5 rounded-xl text-white shrink-0 shadow-sm"><i data-lucide="bot" class="w-5 h-5"></i></div>
+                    <div class="flex-1 max-w-[95%]">${msg.content}</div>`;
+                }
+                messageArea.appendChild(bubble);
+            });
+            
+            lucide.createIcons();
+            setTimeout(() => { chatStream.scrollTop = chatStream.scrollHeight; }, 50);
+            
+            if(window.innerWidth < 768) toggleSidebar();
+            renderSidebar();
+            
+            updateUIMode(); 
+        }
+
+        function startNewSession(forceMode = null) {
+            appState.currentSessionId = 'sess_' + Date.now();
+            appState.currentRequestId = null; 
+            appState.selectedImages = [];
+            specialConcernInput.value = '';
+            specialConcernInput.style.height = '44px';
+            updateImagePreviews();
+            
+            settingsPanel.classList.remove('hidden');
+            messageArea.innerHTML = `
+                <div class="flex items-start gap-3 fade-in welcome-msg">
+                    <div class="bg-gradient-to-br from-medical-500 to-medical-700 p-2.5 rounded-xl text-white shrink-0 shadow-md">
+                        <i data-lucide="bot-message-square" class="w-5 h-5"></i>
+                    </div>
+                    <div class="bg-white rounded-2xl rounded-tl-sm p-5 text-sm text-slate-700 max-w-[85%] border border-surface-200 shadow-sm leading-relaxed">
+                        <p class="font-bold text-slate-900 mb-2 text-base">Clinical AI Diagnostic Hub</p>
+                        <p class="text-slate-600 font-medium">Configure your parameters above and submit clinical findings or imagery for multi-model synthesis and review.</p>
+                    </div>
+                </div>
+            `;
+            
+            headerTitle.textContent = "New Consultation";
+            headerSubtitle.textContent = "Clinical Diagnostic Workspace";
+
+            if (forceMode) setMode(forceMode);
+            lucide.createIcons();
+            if(window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+            }
+            renderSidebar();
+            updateUIMode();
+        }
+
+        modalitySelect.addEventListener('change', (e) => appState.modality = e.target.value);
+        providerSelect.addEventListener('change', (e) => appState.provider = e.target.value);
+
+        function setMode(newMode) {
+            if(messageArea.querySelectorAll('.fade-in').length > 1) {
+                startNewSession(newMode);
+                return;
+            }
+
+            appState.mode = newMode;
+            if (newMode === 'standard') {
+                modeStandardBtn.className = 'flex-1 py-2.5 text-xs md:text-sm font-bold rounded-lg bg-white shadow-sm text-medical-600 transition-all flex justify-center items-center gap-2 border border-surface-200';
+                modeProBtn.className = 'flex-1 py-2.5 text-xs md:text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 transition-all flex justify-center items-center gap-2 border border-transparent';
+                proModeNote.classList.add('hidden');
+            } else {
+                modeProBtn.className = 'flex-1 py-2.5 text-xs md:text-sm font-bold rounded-lg bg-white shadow-sm text-medical-600 transition-all flex justify-center items-center gap-2 border border-surface-200';
+                modeStandardBtn.className = 'flex-1 py-2.5 text-xs md:text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 transition-all flex justify-center items-center gap-2 border border-transparent';
+                proModeNote.classList.remove('hidden');
+            }
+            updateUIMode();
+        }
+
+        modeStandardBtn.addEventListener('click', () => setMode('standard'));
+        modeProBtn.addEventListener('click', () => setMode('pro'));
+
+        function updateImagePreviews() {
+            imagePreviewContainer.innerHTML = '';
+            if (appState.selectedImages.length === 0) {
+                imagePreviewContainer.classList.add('hidden');
+                checkSubmitState();
+                return;
+            }
+            imagePreviewContainer.classList.remove('hidden');
+            appState.selectedImages.forEach((file, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'relative shrink-0 group';
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.className = 'h-16 w-16 md:h-20 md:w-20 object-cover rounded-xl border border-surface-200 shadow-sm';
+                const delBtn = document.createElement('button');
+                delBtn.className = 'absolute -top-2 -right-2 bg-slate-900 text-white p-1 rounded-full shadow-md hover:bg-rose-500 transition-colors opacity-0 group-hover:opacity-100 md:opacity-100 scale-90 md:scale-100';
+                delBtn.innerHTML = '<i data-lucide="x" class="w-3.5 h-3.5"></i>';
+                delBtn.onclick = () => {
+                    appState.selectedImages.splice(index, 1);
+                    updateImagePreviews();
+                };
+                wrapper.appendChild(img);
+                wrapper.appendChild(delBtn);
+                imagePreviewContainer.appendChild(wrapper);
+            });
+            lucide.createIcons();
+            checkSubmitState();
+        }
+
+        function handleFileSelection(e) {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                appState.selectedImages = [...appState.selectedImages, ...files];
+                updateImagePreviews();
+            }
+            e.target.value = ''; 
+        }
+
+        imageInput.addEventListener('change', handleFileSelection);
+        cameraInput.addEventListener('change', handleFileSelection);
+
+        function checkSubmitState() {
+            const hasText = specialConcernInput.value.trim().length > 0;
+            const hasImages = appState.selectedImages.length > 0;
+            if (appState.currentRequestId) {
+                sendBtn.disabled = !hasText;
+            } else {
+                if (appState.mode === 'standard') {
+                    sendBtn.disabled = !hasImages;
+                } else {
+                    sendBtn.disabled = !(hasImages || hasText);
+                }
+            }
+        }
+        specialConcernInput.addEventListener('input', checkSubmitState);
+
+        function formatFollowupText(text) {
+            if (!text) return "";
+            let formatted = text
+                .replace(/###\s+(.*)/g, '<h4 class="font-bold text-medical-800 mt-5 mb-1 text-base">$1</h4>')
+                .replace(/\*\*(.*?)\*\*/g, '<b class="text-slate-900">$1</b>')
+                .replace(/^- (.*)/gm, '<div class="flex gap-2 mt-1.5 ml-1"><span class="text-medical-500 font-bold shrink-0">•</span><span class="flex-1">$1</span></div>');
+            return formatted;
+        }
+
+        // --- Authentication Logic (MODIFIED AS REQUESTED) ---
+        
+        // This function logs in using saved credentials to get a fresh token into memory.
+        // It DOES NOT save the token to localStorage.
+        async function tryRestoreAuth() {
+            const savedEmail = localStorage.getItem('medgpt_auth_email');
+            const savedPass = localStorage.getItem('medgpt_auth_pass');
+
+            if (!savedEmail || !savedPass) return false;
+
+            logMsg("Logging in with saved credentials to get a fresh token...", "wait");
+            
+            try {
+                let res = await fetch("https://uxpqhtjbofpbytvousxg.supabase.co/auth/v1/token?grant_type=password", {
+                    method: 'POST',
+                    headers: supabaseHeaders,
+                    body: JSON.stringify({ email: savedEmail, password: savedPass })
+                });
+                
+                let data = await res.json();
+                
+                if (data.access_token) {
+                    appState.email = savedEmail;
+                    appState.password = savedPass;
+                    appState.supabaseAccessToken = data.access_token; // Token kept only in memory
+                    appState.isAuthDone = true;
+                    
+                    logMsg("Successfully obtained fresh token from saved credentials.", "success");
+                    return true;
+                }
+            } catch (e) {
+                logMsg("Saved credentials invalid.", "error");
+            }
+            return false;
+        }
+
+        async function authenticateSystem(forceNew = false) {
+            // Only try restoring if we aren't explicitly forcing a new account (e.g. quota exhausted)
+            if (!forceNew) {
+                let restored = await tryRestoreAuth();
+                if (restored) return; 
+            }
+
+            logMsg("Creating new secure automated account...", "info");
+            
+            let res = await fetch("https://api.mail.tm/domains", { headers: { 'Content-Type': 'application/json' } });
+            appState.domain = (await res.json())['hydra:member'][0].domain;
+            appState.email = `${randStr(12)}@${appState.domain}`;
+            appState.password = `Pass${Math.floor(1000 + Math.random() * 9000)}!`;
+            
+            await fetch("https://api.mail.tm/accounts", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ address: appState.email, password: appState.password })
+            });
+
+            await fetch("https://uxpqhtjbofpbytvousxg.supabase.co/auth/v1/signup", {
+                method: 'POST',
+                headers: supabaseHeaders,
+                body: JSON.stringify({ email: appState.email, password: appState.password, data: {} })
+            });
+
+            res = await fetch("https://api.mail.tm/token", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ address: appState.email, password: appState.password })
+            });
+            let mailToken = (await res.json()).token;
+
+            let tokenUrl = null;
+            for(let i=0; i<15; i++) {
+                res = await fetch("https://api.mail.tm/messages", { headers: { "Authorization": `Bearer ${mailToken}` } });
+                let msgs = (await res.json())['hydra:member'];
+                if(msgs && msgs.length > 0) {
+                    let msgRes = await fetch(`https://api.mail.tm/messages/${msgs[0].id}`, { headers: { "Authorization": `Bearer ${mailToken}` } });
+                    let htmlText = ((await msgRes.json()).html || [])[0] || "";
+                    let match = htmlText.match(/token=([a-f0-9]+)/i);
+                    if(match) { tokenUrl = match[1]; break; }
+                }
+                await sleep(2000);
+            }
+
+            if(!tokenUrl) throw new Error("Verification timeout.");
+            try {
+                await fetch(`https://uxpqhtjbofpbytvousxg.supabase.co/auth/v1/verify?token=${tokenUrl}&type=signup&redirect_to=https://www.medgpt.net/`, { headers: supabaseHeaders });
+            } catch (e) {}
+
+            res = await fetch("https://uxpqhtjbofpbytvousxg.supabase.co/auth/v1/token?grant_type=password", {
+                method: 'POST',
+                headers: supabaseHeaders,
+                body: JSON.stringify({ email: appState.email, password: appState.password })
+            });
+            
+            let data = await res.json();
+            if(data.access_token) {
+                appState.supabaseAccessToken = data.access_token; // Token kept only in memory
+                appState.isAuthDone = true;
+                
+                // SAVE ONLY EMAIL AND PASSWORD
+                localStorage.setItem('medgpt_auth_email', appState.email);
+                localStorage.setItem('medgpt_auth_pass', appState.password);
+                
+                logMsg("Authentication success. Credentials saved.", "success");
+            } else {
+                throw new Error("Authentication failed.");
+            }
+        }
+
+        // --- Submit Request ---
+        sendBtn.addEventListener('click', async () => {
+            const hasText = specialConcernInput.value.trim().length > 0;
+            const hasImages = appState.selectedImages.length > 0;
+            
+            if (!appState.currentRequestId) {
+                if(appState.mode === 'standard' && !hasImages) return;
+                if(appState.mode === 'pro' && !hasImages && !hasText) return;
+            } else {
+                if(!hasText) return; 
+            }
+
+            let welcomeMsg = messageArea.querySelector('.welcome-msg');
+            if(welcomeMsg) welcomeMsg.remove();
+            settingsPanel.classList.add('hidden');
+
+            let textQuery = specialConcernInput.value.trim();
+            let imagesToSend = [...appState.selectedImages];
+            let currentMode = appState.mode;
+            let currentModality = appState.modality;
+            let currentProvider = appState.provider;
+
+            headerSubtitle.textContent = `Analysis Mode: ${currentMode.toUpperCase()} | Engine: ${currentProvider}`;
+
+            let userBubble = document.createElement('div');
+            userBubble.className = 'flex items-start gap-3 justify-end fade-in';
+            let contentHTML = ``;
+            
+            if (!appState.currentRequestId) {
+                contentHTML += `<div class="flex gap-2 mb-3 text-[10px] text-teal-100 font-bold border-b border-teal-500/30 pb-2 uppercase tracking-wider">`;
+                contentHTML += `<span class="flex items-center gap-1"><i data-lucide="${currentMode==='pro'?'stethoscope':'image'}" class="w-3 h-3"></i> ${currentMode}</span>`;
+                contentHTML += `<span>• ${currentModality}</span>`;
+                contentHTML += `<span>• ${currentProvider.split('_').join(' ')}</span>`;
+                contentHTML += `</div>`;
+            }
+
+            if (imagesToSend.length > 0) {
+                contentHTML += `<div class="flex gap-2 flex-wrap justify-end mb-3">`;
+                imagesToSend.forEach(file => {
+                    contentHTML += `<img src="${URL.createObjectURL(file)}" class="rounded-xl h-24 w-24 object-cover shadow-sm border border-teal-500/20"/>`;
+                });
+                contentHTML += `</div>`;
+            }
+            if(textQuery) {
+                contentHTML += `<p class="whitespace-pre-wrap leading-relaxed text-sm">${textQuery}</p>`;
+            }
+            
+            userBubble.innerHTML = `<div class="bg-medical-600 text-white rounded-2xl p-4 max-w-[85%] shadow-sm">${contentHTML}</div>
+            <div class="bg-slate-200 p-2.5 rounded-full text-slate-700 shrink-0 shadow-sm"><i data-lucide="user" class="w-5 h-5"></i></div>`;
+            
+            messageArea.appendChild(userBubble);
+            lucide.createIcons();
+            setTimeout(() => { chatStream.scrollTop = chatStream.scrollHeight; }, 50);
+            
+            saveCurrentSessionData('user', contentHTML);
+
+            specialConcernInput.value = '';
+            specialConcernInput.style.height = '44px';
+            appState.selectedImages = [];
+            updateImagePreviews();
+            
+            const inputElements = inputAreaContainer.querySelectorAll('input, textarea, button, select');
+            inputElements.forEach(el => el.disabled = true);
+            inputAreaContainer.classList.add('opacity-60');
+
+            let aiBubble = document.createElement('div');
+            aiBubble.className = 'flex items-start gap-3 fade-in mt-4';
+            aiBubble.innerHTML = `<div class="bg-gradient-to-br from-medical-500 to-medical-700 p-2.5 rounded-xl text-white shrink-0 shadow-sm"><i data-lucide="bot" class="w-5 h-5"></i></div>
+                <div id="aiLoadingContent" class="bg-white rounded-2xl rounded-tl-sm p-4 text-sm text-slate-700 max-w-[85%] border border-surface-200 shadow-sm flex items-center gap-3 font-medium">
+                    <i data-lucide="loader-2" class="w-5 h-5 animate-spin text-medical-600"></i> <span>Processing clinical telemetry...</span>
+                </div>`;
+            messageArea.appendChild(aiBubble);
+            setTimeout(() => { chatStream.scrollTop = chatStream.scrollHeight; }, 50);
+
+            const updateStatus = (text) => {
+                const el = aiBubble.querySelector('#aiLoadingContent span');
+                if(el) el.textContent = text;
+            };
+
+            // Force a fresh login sequence before sending the request
+            // This ensures we get a fresh token from the saved credentials or generate a new account.
+            appState.isAuthDone = false; 
+
+            // ---- Request Loop ----
+            try {
+                let data;
+                let rawText = "";
+                let maxRetries = 1; 
+
+                for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                    
+                    if(!appState.isAuthDone) {
+                        updateStatus(attempt > 0 ? "Creating a new account (Quota Exceeded)..." : "Establishing secure session...");
+                        await authenticateSystem(attempt > 0); // Pass true to force new account if it's a retry
+                    }
+
+                    // Build API request params for Android bridge
+                    const apiParams = { access_token: appState.supabaseAccessToken };
+
+                    if (appState.currentRequestId && imagesToSend.length === 0) {
+                        updateStatus(attempt > 0 ? "Resending follow-up with new account..." : "Continuing conversation...");
+                        logMsg("POST Android Bridge -> MedGPT Followup API", "req");
+                        apiParams.action = 'followup';
+                        apiParams.request_id = appState.currentRequestId;
+                        apiParams.question = textQuery || "Follow up";
+                    } else {
+                        updateStatus(attempt > 0 ? "Retrying analysis with new account..." : "Running clinical diagnostics...");
+                        logMsg("POST Android Bridge -> MedGPT Analyze API", "req");
+                        apiParams.action = 'analyze';
+                        apiParams.mode = currentMode;
+                        apiParams.modality = currentModality;
+                        apiParams.provider = currentProvider;
+                        if(textQuery) apiParams.special_concern = textQuery;
+                        
+                        // Convert image files to base64 for Android bridge
+                        const filePromises = [];
+                        for (const file of imagesToSend) {
+                            filePromises.push(new Promise((resolve) => {
+                                const reader = new FileReader();
+                                reader.onload = (e) => resolve({
+                                    name: file.name,
+                                    type: file.type,
+                                    data: e.target.result.split(',')[1]
+                                });
+                                reader.readAsDataURL(file);
+                            }));
+                        }
+                        apiParams.files = await Promise.all(filePromises);
+                    }
+
+                    rawText = await AndroidBridge.request(JSON.stringify(apiParams));
+
+                    try {
+                        let jsonStr = rawText;
+                        const firstBrace = rawText.indexOf('{');
+                        const lastBrace = rawText.lastIndexOf('}');
+                        if (firstBrace !== -1 && lastBrace !== -1) jsonStr = rawText.substring(firstBrace, lastBrace + 1);
+                        data = JSON.parse(jsonStr);
+                    } catch(e) {
+                        throw new Error(rawText || e.message);
+                    }
+
+                    if (data.error || data.detail) {
+                        // Check for credit/quota errors
+                        let isCreditError = data.code === 402 || 
+                                            (typeof data.details === 'string' && data.details.includes('Insufficient credits')) ||
+                                            (typeof data.details === 'string' && data.details.includes('\u4f59\u989d')); 
+
+                        if (isCreditError && attempt < maxRetries) {
+                            logMsg("Account quota exhausted. Clearing data and creating a new account automatically...", "warn");
+                            
+                            appState.isAuthDone = false;
+                            appState.supabaseAccessToken = null;
+                            localStorage.removeItem('medgpt_auth_email');
+                            localStorage.removeItem('medgpt_auth_pass');
+                            // No token was stored in localStorage to remove anyway
+                            
+                            continue;
+                        }
+
+                        throw new Error(rawText);
+                    }
+                    
+                    break;
+                }
+                // ---- End of Request Loop ----
+
+                if (data.request_id) {
+                    appState.currentRequestId = data.request_id;
+                    updateUIMode();
+                }
+
+                logMsg("Response successfully received.", "success");
+
+                let aiResponseHTML = `<div class="bg-white rounded-2xl rounded-tl-sm border border-surface-200 shadow-sm overflow-hidden w-full max-w-2xl text-sm">`;
+                
+                if (data.report) {
+                    let r = data.report;
+                    
+                    aiResponseHTML += `<div class="bg-surface-50 border-b border-surface-200 p-4 flex items-center gap-3">
+                        <div class="bg-teal-100 text-teal-700 p-2 rounded-xl"><i data-lucide="file-check-2" class="w-5 h-5"></i></div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-base">Medical AI Report</h3>
+                            <p class="text-[11px] text-slate-500 uppercase tracking-widest font-bold mt-0.5">Engine: ${currentProvider}</p>
+                        </div>
+                    </div>`;
+                    
+                    aiResponseHTML += `<div class="p-5 space-y-5 report-content">`;
+
+                    if (r.compliance_notice) {
+                        aiResponseHTML += `<div class="bg-amber-50 border-l-4 border-amber-500 p-3 rounded-r-xl text-amber-900 text-xs shadow-sm flex gap-3">
+                            <i data-lucide="info" class="w-4 h-4 shrink-0 text-amber-600 mt-0.5"></i>
+                            <p><b>Safety Notice:</b> ${r.compliance_notice}</p>
+                        </div>`;
+                    }
+
+                    if (r.triage_level) {
+                        let colorClass = r.triage_level.toLowerCase() === 'orange' ? 'bg-orange-50 text-orange-800 border-orange-200' : 
+                                         r.triage_level.toLowerCase() === 'red' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                                         'bg-emerald-50 text-emerald-800 border-emerald-200';
+                        aiResponseHTML += `<div class="inline-flex px-4 py-2 rounded-xl font-bold border shadow-sm ${colorClass} text-xs items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4"></i> Triage Priority: <span class="uppercase tracking-widest ml-1">${r.triage_level}</span>
+                        </div>`;
+                    }
+
+                    let summaryText = r.clinical_summary || r.summary;
+                    if (summaryText) {
+                        aiResponseHTML += `<div class="bg-medical-50/50 p-4.5 rounded-xl border border-medical-100">
+                            <h4 class="font-bold text-medical-900 mb-2 flex items-center gap-2"><i data-lucide="align-left" class="w-4 h-4 text-medical-600"></i> Clinical Summary</h4>
+                            <div class="text-slate-700 leading-relaxed whitespace-pre-wrap">${summaryText}</div>
+                        </div>`;
+
+                        let words = summaryText.trim().split(/\s+/);
+                        let extractedTitle = words.slice(0, 4).join(' ');
+                        if (extractedTitle) {
+                            updateSessionTitle(appState.currentSessionId, extractedTitle);
+                        }
+                    }
+
+                    if (r.findings) {
+                        aiResponseHTML += `<div>
+                            <h4 class="font-bold text-slate-900 border-b border-surface-200 pb-2 mb-3 flex items-center gap-2"><i data-lucide="search" class="w-4 h-4 text-slate-500"></i> Findings</h4>
+                            <div class="text-slate-600 leading-relaxed whitespace-pre-wrap">${r.findings}</div>
+                        </div>`;
+                    }
+                    
+                    if (r.impression) {
+                        aiResponseHTML += `<div>
+                            <h4 class="font-bold text-slate-900 border-b border-surface-200 pb-2 mb-3 flex items-center gap-2"><i data-lucide="microscope" class="w-4 h-4 text-purple-500"></i> Impression</h4>
+                            <div class="text-slate-600 leading-relaxed whitespace-pre-wrap">${r.impression}</div>
+                        </div>`;
+                    }
+
+                    if (r.differential_diagnosis) {
+                        aiResponseHTML += `<div class="bg-purple-50/50 p-4.5 rounded-xl border border-purple-100">
+                            <h4 class="font-bold text-purple-900 mb-2 flex items-center gap-2"><i data-lucide="git-branch" class="w-4 h-4 text-purple-600"></i> Differential Diagnosis</h4>
+                            <div class="text-slate-700 leading-relaxed whitespace-pre-wrap">${r.differential_diagnosis}</div>
+                        </div>`;
+                    }
+
+                    if (r.red_flag_scan) {
+                        aiResponseHTML += `<div class="bg-rose-50/50 p-4.5 rounded-xl border border-rose-100">
+                            <h4 class="font-bold text-rose-900 mb-2 flex items-center gap-2"><i data-lucide="shield-alert" class="w-4 h-4 text-rose-600"></i> Red Flag Scan</h4>
+                            <div class="text-slate-700 leading-relaxed whitespace-pre-wrap">${r.red_flag_scan}</div>
+                        </div>`;
+                    }
+
+                    if (r.recommendations) {
+                        aiResponseHTML += `<div class="bg-amber-50/50 p-4.5 rounded-xl border border-amber-100 mt-2">
+                            <h4 class="font-bold text-amber-900 mb-2 flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4 text-amber-600"></i> Recommendations</h4>
+                            <div class="text-slate-700 leading-relaxed whitespace-pre-wrap font-medium">${r.recommendations}</div>
+                        </div>`;
+                    }
+
+                    aiResponseHTML += `</div>`;
+                } 
+                else if (data.answer) {
+                    aiResponseHTML += `<div class="bg-surface-50 border-b border-surface-200 p-4 flex items-center gap-3">
+                        <div class="bg-blue-100 text-blue-700 p-2 rounded-xl"><i data-lucide="message-circle" class="w-5 h-5"></i></div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-base">Follow-up Response</h3>
+                            <p class="text-[11px] text-slate-500 uppercase tracking-widest font-bold mt-0.5">Engine: ${currentProvider}</p>
+                        </div>
+                    </div>`;
+                    
+                    aiResponseHTML += `<div class="p-5 text-slate-700 whitespace-pre-wrap leading-relaxed">${formatFollowupText(data.answer)}</div>`;
+                } 
+                else {
+                    aiResponseHTML += `<div class="p-5 text-slate-700 whitespace-pre-wrap leading-relaxed">${data.result || data.analysis || data.response || data.message || "Response received."}</div>`;
+                }
+
+                aiResponseHTML += `</div>`;
+
+                aiBubble.innerHTML = `<div class="bg-gradient-to-br from-medical-500 to-medical-700 p-2.5 rounded-xl text-white shrink-0 shadow-sm mt-1"><i data-lucide="bot" class="w-5 h-5"></i></div>${aiResponseHTML}`;
+                lucide.createIcons();
+                setTimeout(() => { chatStream.scrollTop = chatStream.scrollHeight; }, 100);
+                
+                headerSubtitle.textContent = "Clinical Diagnostic Workspace";
+                saveCurrentSessionData('ai', aiResponseHTML);
+
+            } catch (err) {
+                let errorMsg = err.message;
+                let safeErrorMsg = String(errorMsg).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                
+                aiBubble.innerHTML = `<div class="bg-rose-100 p-2.5 rounded-full text-rose-600 shrink-0 shadow-sm"><i data-lucide="alert-triangle" class="w-5 h-5"></i></div>
+                <div class="bg-white rounded-2xl p-4 text-sm text-rose-700 border border-rose-200 shadow-sm font-mono whitespace-pre-wrap break-words max-w-full overflow-x-auto">${safeErrorMsg}</div>`;
+                logMsg(errorMsg, "error");
+                lucide.createIcons();
+            } finally {
+                inputElements.forEach(el => el.disabled = false);
+                inputAreaContainer.classList.remove('opacity-60');
+                checkSubmitState(); 
+            }
+        });
+
+        startNewSession();
+    </script>
+</body>
+</html>

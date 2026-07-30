@@ -35,7 +35,6 @@ jobs:
             "cmake;3.22.1" \
             2>/dev/null || true
           echo "sdk.dir=$ANDROID_HOME" > local.properties
-          echo "ndk.dir=$ANDROID_HOME/ndk/25.2.9519653" >> local.properties
 
       - name: Build APK
         run: |

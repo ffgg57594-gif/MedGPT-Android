@@ -5,6 +5,7 @@ plugins {
 android {
     namespace = "com.medgpt.app"
     compileSdk = 34
+    ndkVersion = "25.2.9519653"
 
     defaultConfig {
         applicationId = "com.medgpt.app"

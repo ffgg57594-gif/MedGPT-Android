@@ -7,7 +7,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.View;
 import android.webkit.ValueCallback;
@@ -15,7 +14,6 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -34,14 +32,15 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_CAMERA_PERMISSION = 100;
     private static final int REQUEST_STORAGE_PERMISSION = 101;
-    private static final int REQUEST_FILE_CHOOSER = 102;
-    private static final int REQUEST_CAMERA_CAPTURE = 103;
+    private static final int REQUEST_GALLERY = 102;
+    private static final int REQUEST_CAMERA = 103;
 
     private WebView webView;
     private ApiBridge apiBridge;
 
     private ValueCallback<Uri[]> filePathCallback;
     private Uri cameraPhotoUri;
+    private boolean isCameraMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
         settings.setBuiltInZoomControls(false);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setAllowFileAccessFromFileURLs(true);
@@ -68,29 +67,7 @@ public class MainActivity extends AppCompatActivity {
         // Register JavaScript interface
         webView.addJavascriptInterface(apiBridge, "AndroidBridge");
 
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                ProgressBar progressBar = findViewById(R.id.progressBar);
-                progressBar.setVisibility(View.GONE);
-                webView.setVisibility(View.VISIBLE);
-            }
-        });
-
         webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onProgressChanged(WebView view, int newProgress) {
-                super.onProgressChanged(view, newProgress);
-                ProgressBar progressBar = findViewById(R.id.progressBar);
-                progressBar.setProgress(newProgress);
-                if (newProgress < 100) {
-                    progressBar.setVisibility(View.VISIBLE);
-                } else {
-                    progressBar.setVisibility(View.GONE);
-                }
-            }
-
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> filePath,
                                              FileChooserParams fileChooserParams) {
@@ -99,26 +76,34 @@ public class MainActivity extends AppCompatActivity {
                 }
                 filePathCallback = filePath;
 
-                // Create intent for file selection
-                Intent intent = fileChooserParams.createIntent();
+                // Check if this is a camera capture request
+                isCameraMode = fileChooserParams.isCaptureEnabled();
 
-                // Check and request permissions
-                if (checkCameraPermission() && checkStoragePermission()) {
-                    openCameraAndGallery(intent);
-                } else if (!checkCameraPermission()) {
-                    requestCameraPermission();
+                if (isCameraMode) {
+                    // Only open camera directly
+                    if (checkCameraPermission()) {
+                        openCameraOnly();
+                    } else {
+                        requestCameraPermission();
+                    }
                 } else {
-                    startActivityForResult(intent, REQUEST_FILE_CHOOSER);
+                    // Only open gallery
+                    if (checkStoragePermission()) {
+                        openGalleryOnly();
+                    } else {
+                        requestStoragePermission();
+                    }
                 }
 
                 return true;
             }
         });
 
-        // Request permissions on start
+        // Request storage permissions for app startup
         requestNeededPermissions();
 
-        // Load the app from embedded assets (compiled into DEX)
+        // WebView starts visible, load from embedded code instantly
+        webView.setVisibility(View.VISIBLE);
         webView.loadDataWithBaseURL("file:///android_asset/",
                 AssetsProvider.getIndexHtml(), "text/html", "UTF-8", null);
     }
@@ -127,24 +112,14 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<String> permissions = new ArrayList<>();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES)
                     != PackageManager.PERMISSION_GRANTED) {
                 permissions.add(Manifest.permission.READ_MEDIA_IMAGES);
             }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                    != PackageManager.PERMISSION_GRANTED) {
-                permissions.add(Manifest.permission.CAMERA);
-            }
         } else {
-            // Android 12 and below
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
                     != PackageManager.PERMISSION_GRANTED) {
                 permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-            }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                    != PackageManager.PERMISSION_GRANTED) {
-                permissions.add(Manifest.permission.CAMERA);
             }
         }
 
@@ -156,11 +131,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean checkCameraPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED) {
-            return true;
-        }
-        return false;
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED;
     }
 
     private boolean checkStoragePermission() {
@@ -191,8 +163,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void openCameraAndGallery(Intent galleryIntent) {
-        // Create a temp file for camera photo
+    private void openCameraOnly() {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (cameraIntent.resolveActivity(getPackageManager()) != null) {
             try {
@@ -202,20 +173,21 @@ public class MainActivity extends AppCompatActivity {
                             getPackageName() + ".fileprovider",
                             photoFile);
                     cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraPhotoUri);
+                    startActivityForResult(cameraIntent, REQUEST_CAMERA);
+                    return;
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+        startActivityForResult(cameraIntent, REQUEST_CAMERA);
+    }
 
-        // Create chooser with camera and gallery
-        Intent chooserIntent = Intent.createChooser(galleryIntent, "Select Image");
-        if (cameraIntent.resolveActivity(getPackageManager()) != null) {
-            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS,
-                    new Intent[]{cameraIntent});
-        }
-
-        startActivityForResult(chooserIntent, REQUEST_CAMERA_CAPTURE);
+    private void openGalleryOnly() {
+        Intent galleryIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        galleryIntent.setType("image/*");
+        galleryIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        startActivityForResult(galleryIntent, REQUEST_GALLERY);
     }
 
     private File createTempImageFile() throws IOException {
@@ -239,29 +211,17 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 }
             }
-            if (granted) {
-                // Retry - trigger the file chooser again
-                if (filePathCallback != null) {
-                    webView.loadDataWithBaseURL("file:///android_asset/",
-                            AssetsProvider.getIndexHtml(), "text/html", "UTF-8", null);
-                    Toast.makeText(this, "Camera permission granted. Please try again.",
-                            Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Toast.makeText(this, "Camera permission is required to take photos",
-                        Toast.LENGTH_LONG).show();
-                if (filePathCallback != null) {
-                    filePathCallback.onReceiveValue(null);
-                    filePathCallback = null;
-                }
+            if (granted && filePathCallback != null) {
+                openCameraOnly();
+            } else if (filePathCallback != null) {
+                filePathCallback.onReceiveValue(null);
+                filePathCallback = null;
             }
         }
 
         if (requestCode == REQUEST_STORAGE_PERMISSION) {
             if (filePathCallback != null) {
-                // Permission was granted or the user chose to proceed without
-                Toast.makeText(this, "Storage permission granted. You can now select images.",
-                        Toast.LENGTH_SHORT).show();
+                openGalleryOnly();
             }
         }
     }
@@ -269,18 +229,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
         if (filePathCallback == null) return;
 
-        if (requestCode == REQUEST_CAMERA_CAPTURE) {
-            ArrayList<Uri> uris = new ArrayList<>();
+        ArrayList<Uri> uris = new ArrayList<>();
 
-            // Handle camera photo
+        if (requestCode == REQUEST_CAMERA) {
             if (resultCode == Activity.RESULT_OK && cameraPhotoUri != null) {
                 uris.add(cameraPhotoUri);
             }
-
-            // Handle gallery selection
+        } else if (requestCode == REQUEST_GALLERY) {
             if (data != null) {
                 if (data.getData() != null) {
                     uris.add(data.getData());
@@ -290,16 +247,12 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-
-            if (!uris.isEmpty()) {
-                filePathCallback.onReceiveValue(uris.toArray(new Uri[0]));
-            } else {
-                filePathCallback.onReceiveValue(null);
-            }
-
-            filePathCallback = null;
-            cameraPhotoUri = null;
         }
+
+        filePathCallback.onReceiveValue(uris.isEmpty() ? null : uris.toArray(new Uri[0]));
+        filePathCallback = null;
+        cameraPhotoUri = null;
+        isCameraMode = false;
     }
 
     @Override

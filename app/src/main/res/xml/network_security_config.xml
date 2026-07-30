@@ -7,7 +7,7 @@
         </trust-anchors>
     </base-config>
 
-    <!-- MedGPT API - SSL Pinning -->
+    <!-- MedVision AI API - SSL Pinning -->
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="false">www.medgpt.net</domain>
         <domain includeSubdomains="false">medgpt.net</domain>

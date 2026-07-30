@@ -21,7 +21,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * Multi-layer security manager for MedGPT app.
+ * Multi-layer security manager for MedVision AI app.
  * Combines native C++ checks with Java-level security layers:
  * - Anti-Root, Anti-Frida, Anti-Debug
  * - Emulator Detection

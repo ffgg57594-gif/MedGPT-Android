@@ -1,5 +1,5 @@
 # ============================================================
-# MedGPT App - Hardened ProGuard/R8 Rules
+# MedVision AI - Hardened ProGuard/R8 Rules
 # ============================================================
 
 # ---- Keep JavaScript Interface (called from WebView JS) ----

@@ -46,25 +46,25 @@ jobs:
           if [ -f app/build/outputs/apk/release/app-release-unsigned.apk ]; then
             keytool -genkey -v -keystore $HOME/debug.keystore -alias debug \
               -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass android -keypass android -dname "CN=MedGPT, O=MedGPT, C=US"
+              -storepass android -keypass android -dname "CN=MedVision AI, O=MedVision AI, C=US"
             
             $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
               --ks $HOME/debug.keystore \
               --ks-pass pass:android \
               --key-pass pass:android \
-              --out ${{ github.workspace }}/MedGPT.apk \
+              --out ${{ github.workspace }}/MedVisionAI.apk \
               app/build/outputs/apk/release/app-release-unsigned.apk
           fi
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MedGPT-APK
-          path: MedGPT.apk
+          name: MedVisionAI-APK
+          path: MedVisionAI.apk
           if-no-files-found: warn
 
       - name: Upload APK as Release (on tag)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: MedGPT.apk
+          files: MedVisionAI.apk

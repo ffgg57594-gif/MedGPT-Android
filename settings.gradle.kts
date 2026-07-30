@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MedGPT"
+rootProject.name = "MedVision-AI"
 include(":app")

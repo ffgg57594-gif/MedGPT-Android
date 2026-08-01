@@ -54,6 +54,10 @@ public class BillingManager {
     private final WebView webView;
     private final SharedPreferences prefs;
     private final Map<String, ProductDetails> products = new ConcurrentHashMap<>();
+    // Play-authoritative entitlement state (set only from queryPurchases results)
+    private volatile boolean subscriptionActive = false;
+    private volatile boolean lifetimeOwned = false;
+    private volatile boolean playStateQueried = false;
 
     private BillingClient billingClient;
 
@@ -112,7 +116,7 @@ public class BillingManager {
 
     /**
      * Returns the current billing state as a JSON string:
-     * { connected, isPremium, entitlement, subscriptionActive, lifetimeOwned, monthly, lifetime }
+     * { connected, pending, isPremium, entitlement, subscriptionActive, lifetimeOwned, monthly, lifetime }
      */
     @JavascriptInterface
     public String getStatus() {
@@ -251,6 +255,14 @@ public class BillingManager {
                 }
             }
         }
+        // Memory state is authoritative and always overwritten by the fresh Play answer:
+        // if Play reports the subscription is no longer active, it is treated as expired
+        // even when the local cache still holds an old "active" value.
+        subscriptionActive = subActive;
+        lifetimeOwned = lifetime;
+        playStateQueried = true;
+
+        // Keep the cache updated for reference, but it is never used to grant access.
         prefs.edit()
                 .putBoolean(KEY_SUB_ACTIVE, subActive)
                 .putBoolean(KEY_LIFETIME, lifetime)
@@ -328,8 +340,17 @@ public class BillingManager {
     private String buildStatusJson() {
         JSONObject json = new JSONObject();
         try {
-            boolean lifetime = prefs.getBoolean(KEY_LIFETIME, false);
-            boolean subActive = prefs.getBoolean(KEY_SUB_ACTIVE, false);
+            // Google Play is the source of truth. Until the first Play query completes,
+            // entitlements stay locked (pending) — the local cache is never used to grant access.
+            boolean lifetime;
+            boolean subActive;
+            if (playStateQueried) {
+                lifetime = lifetimeOwned;
+                subActive = subscriptionActive;
+            } else {
+                lifetime = false;
+                subActive = false;
+            }
 
             boolean premium = lifetime || subActive;
 
@@ -338,6 +359,7 @@ public class BillingManager {
                     : "none";
 
             json.put("connected", isReady());
+            json.put("pending", !playStateQueried);
             json.put("isPremium", premium);
             json.put("entitlement", entitlement);
             json.put("subscriptionActive", subActive);

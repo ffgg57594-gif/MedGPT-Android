@@ -36,7 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *  - premium_lifetime : one-time in-app product
  *
  * Entitlements:
- *  - 3-day free trial granted automatically on first launch (stored locally).
  *  - Monthly subscription active while Play reports an owned subscription purchase.
  *  - Lifetime access once the lifetime product is purchased.
  */
@@ -47,12 +46,7 @@ public class BillingManager {
     public static final String PRODUCT_MONTHLY = "premium_monthly";
     public static final String PRODUCT_LIFETIME = "premium_lifetime";
 
-    public static final long TRIAL_DAYS = 3;
-    private static final long TRIAL_MS = TRIAL_DAYS * 24L * 60L * 60L * 1000L;
-    private static final long DAY_MS = 24L * 60L * 60L * 1000L;
-
     private static final String PREFS = "medvision_billing";
-    private static final String KEY_TRIAL_START = "trial_started_at";
     private static final String KEY_SUB_ACTIVE = "subscription_active";
     private static final String KEY_LIFETIME = "lifetime_owned";
 
@@ -109,12 +103,16 @@ public class BillingManager {
         }
     }
 
+    /** Re-queries Google Play for owned purchases (used when the app resumes). */
+    public void refresh() {
+        activity.runOnUiThread(this::queryPurchases);
+    }
+
     // ==================== JS Bridge ====================
 
     /**
      * Returns the current billing state as a JSON string:
-     * { connected, isPremium, entitlement, trialActive, trialDaysLeft, trialEndsAt,
-     *   subscriptionActive, lifetimeOwned, monthly, lifetime }
+     * { connected, isPremium, entitlement, subscriptionActive, lifetimeOwned, monthly, lifetime }
      */
     @JavascriptInterface
     public String getStatus() {
@@ -298,7 +296,7 @@ public class BillingManager {
                 if (days > 0) return days;
             }
         }
-        return (int) TRIAL_DAYS;
+        return 3;
     }
 
     private ProductDetails.PricingPhase firstPaidPhase(ProductDetails.SubscriptionOfferDetails offer) {
@@ -330,32 +328,18 @@ public class BillingManager {
     private String buildStatusJson() {
         JSONObject json = new JSONObject();
         try {
-            long now = System.currentTimeMillis();
-            long trialStart = prefs.getLong(KEY_TRIAL_START, 0);
-            if (trialStart == 0) {
-                trialStart = now;
-                prefs.edit().putLong(KEY_TRIAL_START, trialStart).apply();
-            }
-
             boolean lifetime = prefs.getBoolean(KEY_LIFETIME, false);
             boolean subActive = prefs.getBoolean(KEY_SUB_ACTIVE, false);
-            boolean trialActive = now < trialStart + TRIAL_MS;
-            boolean premium = lifetime || subActive || trialActive;
+
+            boolean premium = lifetime || subActive;
 
             String entitlement = lifetime ? "lifetime"
                     : subActive ? "subscription"
-                    : trialActive ? "trial" : "none";
-
-            long trialEnd = trialStart + TRIAL_MS;
-            long remainMs = trialEnd - now;
-            int trialDaysLeft = trialActive ? (int) ((remainMs + DAY_MS - 1) / DAY_MS) : 0;
+                    : "none";
 
             json.put("connected", isReady());
             json.put("isPremium", premium);
             json.put("entitlement", entitlement);
-            json.put("trialActive", trialActive);
-            json.put("trialDaysLeft", trialDaysLeft);
-            json.put("trialEndsAt", trialEnd);
             json.put("subscriptionActive", subActive);
             json.put("lifetimeOwned", lifetime);
             json.put("monthly", productJson(PRODUCT_MONTHLY, true));

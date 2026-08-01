@@ -128,6 +128,15 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Re-fetch subscription state from Google Play (handles trial end / cancellation)
+        if (billingManager != null) {
+            billingManager.refresh();
+        }
+    }
+
     private void applySystemBarInsets() {
         View root = findViewById(R.id.rootContainer);
         if (root == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {

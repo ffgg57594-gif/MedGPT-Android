@@ -112,6 +112,13 @@ public class BillingManager {
         activity.runOnUiThread(this::queryPurchases);
     }
 
+    /** Re-attempts connecting to Google Play Billing (used by the lock screen retry). */
+    @JavascriptInterface
+    public String retry() {
+        connect();
+        return simpleResult(true, "جارٍ الاتصال بمتجر Google Play...");
+    }
+
     // ==================== JS Bridge ====================
 
     /**

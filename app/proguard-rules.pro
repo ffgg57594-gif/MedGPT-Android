@@ -16,6 +16,10 @@
 }
 -keep class com.drarabi.medvision.SecurityManager { *; }
 
+# ---- Keep BillingManager (called from WebView JS + Play Billing callbacks) ----
+-keep class com.drarabi.medvision.BillingManager { *; }
+-dontwarn com.android.billingclient.**
+
 # ---- Keep AssetsProvider (embedded HTML) ----
 -keep class com.drarabi.medvision.AssetsProvider { *; }
 

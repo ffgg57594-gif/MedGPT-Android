@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private ApiBridge apiBridge;
     private SecurityManager securityManager;
+    private BillingManager billingManager;
     private ValueCallback<Uri[]> filePathCallback;
     private Uri cameraPhotoUri;
 
@@ -54,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
         webView = findViewById(R.id.webView);
         apiBridge = new ApiBridge(webView);
         securityManager = new SecurityManager(this);
+        billingManager = new BillingManager(this, webView);
 
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
@@ -69,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
         s.setAllowFileAccessFromFileURLs(true);
 
         webView.addJavascriptInterface(apiBridge, "AndroidBridge");
+        webView.addJavascriptInterface(billingManager, "BillingBridge");
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -112,6 +115,17 @@ public class MainActivity extends AppCompatActivity {
 
         // Run security checks (silent - doesn't block app usage)
         runSecurityChecks();
+
+        // Connect to Google Play Billing (subscriptions + lifetime access)
+        billingManager.connect();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (billingManager != null) {
+            billingManager.destroy();
+        }
+        super.onDestroy();
     }
 
     private void applySystemBarInsets() {

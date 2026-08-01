@@ -11,8 +11,8 @@ android {
         applicationId = "com.drarabi.medvision"
         minSdk = 24
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1.2"
+        versionCode = 3
+        versionName = "1.2.0"
 
         // NDK/CMake for native security layer
         externalNativeBuild {
@@ -69,4 +69,5 @@ dependencies {
 
     // Play Integrity API (for device integrity verification)
     implementation("com.google.android.play:integrity:1.3.0")
+    implementation("com.android.billingclient:billing:7.1.1")
 }

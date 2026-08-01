@@ -1,0 +1,106 @@
+[
+  {
+    "level_": 0,
+    "message_": "Start JSON generation. Platform version: 24 min SDK version: arm64-v8a",
+    "file_": "/tmp/medvision-ai/app/src/main/jni/CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "rebuilding JSON /tmp/medvision-ai/app/.cxx/Debug/4b5i6e1k/arm64-v8a/android_gradle_build.json due to:",
+    "file_": "/tmp/medvision-ai/app/src/main/jni/CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "- no fingerprint file, will remove stale configuration folder",
+    "file_": "/tmp/medvision-ai/app/src/main/jni/CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "removing stale contents from \u0027/tmp/medvision-ai/app/.cxx/Debug/4b5i6e1k/arm64-v8a\u0027",
+    "file_": "/tmp/medvision-ai/app/src/main/jni/CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "created folder \u0027/tmp/medvision-ai/app/.cxx/Debug/4b5i6e1k/arm64-v8a\u0027",
+    "file_": "/tmp/medvision-ai/app/src/main/jni/CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "executing cmake /root/android-sdk/cmake/3.22.1/bin/cmake \\\n  -H/tmp/medvision-ai/app/src/main/jni \\\n  -DCMAKE_SYSTEM_NAME\u003dAndroid \\\n  -DCMAKE_EXPORT_COMPILE_COMMANDS\u003dON \\\n  -DCMAKE_SYSTEM_VERSION\u003d24 \\\n  -DANDROID_PLATFORM\u003dandroid-24 \\\n  -DANDROID_ABI\u003darm64-v8a \\\n  -DCMAKE_ANDROID_ARCH_ABI\u003darm64-v8a \\\n  -DANDROID_NDK\u003d/root/android-sdk/ndk/25.2.9519653 \\\n  -DCMAKE_ANDROID_NDK\u003d/root/android-sdk/ndk/25.2.9519653 \\\n  -DCMAKE_TOOLCHAIN_FILE\u003d/root/android-sdk/ndk/25.2.9519653/build/cmake/android.toolchain.cmake \\\n  -DCMAKE_MAKE_PROGRAM\u003d/root/android-sdk/cmake/3.22.1/bin/ninja \\\n  \"-DCMAKE_CXX_FLAGS\u003d-std\u003dc++17 -fvisibility\u003dhidden -fstack-protector-strong\" \\\n  -DCMAKE_LIBRARY_OUTPUT_DIRECTORY\u003d/tmp/medvision-ai/app/build/intermediates/cxx/Debug/4b5i6e1k/obj/arm64-v8a \\\n  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY\u003d/tmp/medvision-ai/app/build/intermediates/cxx/Debug/4b5i6e1k/obj/arm64-v8a \\\n  -DCMAKE_BUILD_TYPE\u003dDebug \\\n  -B/tmp/medvision-ai/app/.cxx/Debug/4b5i6e1k/arm64-v8a \\\n  -GNinja \\\n  -DANDROID_STL\u003dc++_shared\n",
+    "file_": "/tmp/medvision-ai/app/src/main/jni/CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "/root/android-sdk/cmake/3.22.1/bin/cmake \\\n  -H/tmp/medvision-ai/app/src/main/jni \\\n  -DCMAKE_SYSTEM_NAME\u003dAndroid \\\n  -DCMAKE_EXPORT_COMPILE_COMMANDS\u003dON \\\n  -DCMAKE_SYSTEM_VERSION\u003d24 \\\n  -DANDROID_PLATFORM\u003dandroid-24 \\\n  -DANDROID_ABI\u003darm64-v8a \\\n  -DCMAKE_ANDROID_ARCH_ABI\u003darm64-v8a \\\n  -DANDROID_NDK\u003d/root/android-sdk/ndk/25.2.9519653 \\\n  -DCMAKE_ANDROID_NDK\u003d/root/android-sdk/ndk/25.2.9519653 \\\n  -DCMAKE_TOOLCHAIN_FILE\u003d/root/android-sdk/ndk/25.2.9519653/build/cmake/android.toolchain.cmake \\\n  -DCMAKE_MAKE_PROGRAM\u003d/root/android-sdk/cmake/3.22.1/bin/ninja \\\n  \"-DCMAKE_CXX_FLAGS\u003d-std\u003dc++17 -fvisibility\u003dhidden -fstack-protector-strong\" \\\n  -DCMAKE_LIBRARY_OUTPUT_DIRECTORY\u003d/tmp/medvision-ai/app/build/intermediates/cxx/Debug/4b5i6e1k/obj/arm64-v8a \\\n  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY\u003d/tmp/medvision-ai/app/build/intermediates/cxx/Debug/4b5i6e1k/obj/arm64-v8a \\\n  -DCMAKE_BUILD_TYPE\u003dDebug \\\n  -B/tmp/medvision-ai/app/.cxx/Debug/4b5i6e1k/arm64-v8a \\\n  -GNinja \\\n  -DANDROID_STL\u003dc++_shared\n",
+    "file_": "/tmp/medvision-ai/app/src/main/jni/CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "JSON generation completed with problem. Exception: org.gradle.process.internal.ExecException: A problem occurred starting process \u0027command \u0027/root/android-sdk/cmake/3.22.1/bin/cmake\u0027\u0027",
+    "file_": "/tmp/medvision-ai/app/src/main/jni/CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  }
+]

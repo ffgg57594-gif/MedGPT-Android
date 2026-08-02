@@ -116,7 +116,7 @@ public class BillingManager {
     @JavascriptInterface
     public String retry() {
         connect();
-        return simpleResult(true, "جارٍ الاتصال بمتجر Google Play...");
+        return simpleResult(true, "Connecting to Google Play...");
     }
 
     // ==================== JS Bridge ====================
@@ -137,11 +137,13 @@ public class BillingManager {
     @JavascriptInterface
     public String buy(String productId) {
         if (!isReady()) {
-            return simpleResult(false, "متجر Google Play غير متصل. تحقق من اتصالك وحاول مرة أخرى.");
+            return simpleResult(false, "Google Play is not connected. Check your connection and try again.");
         }
         ProductDetails details = products.get(productId);
         if (details == null) {
-            return simpleResult(false, "المنتج غير متاح حاليًا. حاول مرة أخرى بعد قليل.");
+            // Product details may not have loaded yet — refresh them once and guide the user.
+            queryProductDetails();
+            return simpleResult(false, "Preparing the Play Store checkout — please try again in a moment.");
         }
 
         BillingFlowParams.ProductDetailsParams.Builder paramsBuilder =
@@ -150,7 +152,7 @@ public class BillingManager {
         if (BillingClient.ProductType.SUBS.equals(details.getProductType())) {
             ProductDetails.SubscriptionOfferDetails offer = pickOffer(details);
             if (offer == null) {
-                return simpleResult(false, "لم يتم العثور على خطة الاشتراك.");
+                return simpleResult(false, "No subscription plan was found.");
             }
             paramsBuilder.setOfferToken(offer.getOfferToken());
         }
@@ -165,17 +167,17 @@ public class BillingManager {
                 pushStatus("purchase_error", result.getDebugMessage());
             }
         });
-        return simpleResult(true, "جارٍ فتح صفحة الدفع...");
+        return simpleResult(true, "Opening the Play Store checkout...");
     }
 
     /** Re-queries Play for owned purchases and refreshes entitlements. */
     @JavascriptInterface
     public String restore() {
         if (!isReady()) {
-            return simpleResult(false, "متجر Google Play غير متصل. تحقق من اتصالك وحاول مرة أخرى.");
+            return simpleResult(false, "Google Play is not connected. Check your connection and try again.");
         }
         activity.runOnUiThread(this::queryPurchases);
-        return simpleResult(true, "جارٍ استعادة المشتريات...");
+        return simpleResult(true, "Restoring your purchases...");
     }
 
     // ==================== Billing queries ====================
@@ -237,9 +239,9 @@ public class BillingManager {
                 int code = billingResult.getResponseCode();
                 if (code == BillingClient.BillingResponseCode.OK && purchases != null) {
                     applyPurchases(purchases);
-                    pushStatus("purchase_success", "تم تفعيل اشتراكك بنجاح.");
+                    pushStatus("purchase_success", "Your subscription has been activated.");
                 } else if (code == BillingClient.BillingResponseCode.USER_CANCELED) {
-                    pushStatus("purchase_cancelled", "تم إلغاء عملية الدفع.");
+                    pushStatus("purchase_cancelled", "Purchase cancelled.");
                 } else if (code == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
                     queryPurchases();
                 } else {

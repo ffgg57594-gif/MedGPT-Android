@@ -89,7 +89,8 @@ public class BillingManager {
                     queryPurchases();
                 } else {
                     Log.w(TAG, "Billing setup failed: " + billingResult.getDebugMessage());
-                    pushStatus("setup_failed", billingResult.getDebugMessage());
+                    pushStatus("setup_failed",
+                            setupFailureMessage(billingResult.getResponseCode(), billingResult.getDebugMessage()));
                 }
             }
 
@@ -137,7 +138,10 @@ public class BillingManager {
     @JavascriptInterface
     public String buy(String productId) {
         if (!isReady()) {
-            return simpleResult(false, "Google Play is not connected. Check your connection and try again.");
+            if (!playStoreInstalled()) {
+                return simpleResult(false, "Google Play Store is not installed on this device, so billing is unavailable.");
+            }
+            return simpleResult(false, "Google Play billing is not connected yet. Sign in to the Play Store and make sure this build is installed from Google Play (Internal Testing), then try again.");
         }
         ProductDetails details = products.get(productId);
         if (details == null) {
@@ -164,7 +168,8 @@ public class BillingManager {
         activity.runOnUiThread(() -> {
             BillingResult result = billingClient.launchBillingFlow(activity, flowParams);
             if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) {
-                pushStatus("purchase_error", result.getDebugMessage());
+                pushStatus("purchase_error",
+                        billingErrorMessage(result.getResponseCode(), result.getDebugMessage()));
             }
         });
         return simpleResult(true, "Opening the Play Store checkout...");
@@ -245,7 +250,8 @@ public class BillingManager {
                 } else if (code == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
                     queryPurchases();
                 } else {
-                    pushStatus("purchase_error", billingResult.getDebugMessage());
+                    pushStatus("purchase_error",
+                            billingErrorMessage(code, billingResult.getDebugMessage()));
                 }
             };
 
@@ -344,6 +350,54 @@ public class BillingManager {
         return 0;
     }
 
+    // ==================== Diagnostics ====================
+
+    private boolean playStoreInstalled() {
+        try {
+            return activity.getPackageManager().getPackageInfo("com.android.vending", 0) != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private String setupFailureMessage(int responseCode, String debugMessage) {
+        switch (responseCode) {
+            case BillingClient.BillingResponseCode.BILLING_UNAVAILABLE:
+                return playStoreInstalled()
+                        ? "Play billing is unavailable — this build must be installed from Google Play (Internal Testing) with a tester account to buy."
+                        : "Google Play Store is not installed on this device, so billing is unavailable.";
+            case BillingClient.BillingResponseCode.DEVELOPER_ERROR:
+                return "Billing setup error: check that the product IDs match your Play Console app and that this APK is signed and linked to it.";
+            case BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE:
+                return "Play billing service is unavailable right now — check your internet connection and try again.";
+            case BillingClient.BillingResponseCode.FEATURE_NOT_SUPPORTED:
+                return "Play billing is not supported on this device.";
+            default:
+                return (debugMessage != null && !debugMessage.isEmpty())
+                        ? debugMessage
+                        : "Could not connect to Google Play billing. Try again.";
+        }
+    }
+
+    private String billingErrorMessage(int responseCode, String debugMessage) {
+        switch (responseCode) {
+            case BillingClient.BillingResponseCode.ITEM_UNAVAILABLE:
+                return "This product is not available yet — check that the product IDs match your Play Console and that the app is on an active testing track.";
+            case BillingClient.BillingResponseCode.BILLING_UNAVAILABLE:
+                return playStoreInstalled()
+                        ? "Play billing is unavailable — install this build from Google Play (Internal Testing) with a tester account to buy."
+                        : "Google Play Store is not installed on this device, so billing is unavailable.";
+            case BillingClient.BillingResponseCode.DEVELOPER_ERROR:
+                return "Billing error: check the product setup and that this APK is signed and linked to your Play Console app.";
+            case BillingClient.BillingResponseCode.USER_CANCELED:
+                return "Purchase cancelled.";
+            default:
+                return (debugMessage != null && !debugMessage.isEmpty())
+                        ? debugMessage
+                        : "Could not start the purchase. Try again.";
+        }
+    }
+
     // ==================== Status JSON ====================
 
     private String buildStatusJson() {
@@ -368,6 +422,7 @@ public class BillingManager {
                     : "none";
 
             json.put("connected", isReady());
+            json.put("playStore", playStoreInstalled());
             json.put("pending", !playStateQueried);
             json.put("isPremium", premium);
             json.put("entitlement", entitlement);

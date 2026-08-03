@@ -206,11 +206,15 @@ public class BillingManager {
                                 .build()))
                 .build();
 
-        billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsList) -> {
+        billingClient.queryProductDetailsAsync(params, (billingResult, result) -> {
+            // Billing 9.x returns a QueryProductDetailsResult wrapper instead of a raw list.
             if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK
-                    && productDetailsList != null) {
-                for (ProductDetails details : productDetailsList) {
-                    products.put(details.getProductId(), details);
+                    && result != null) {
+                List<ProductDetails> productDetailsList = result.getProductDetailsList();
+                if (productDetailsList != null) {
+                    for (ProductDetails details : productDetailsList) {
+                        products.put(details.getProductId(), details);
+                    }
                 }
                 pushStatus("products_loaded", null);
             } else {

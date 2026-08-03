@@ -137,6 +137,15 @@ public class BillingManager {
      */
     @JavascriptInterface
     public String buy(String productId) {
+        try {
+            return doBuy(productId);
+        } catch (Exception e) {
+            Log.e(TAG, "buy() failed", e);
+            return simpleResult(false, "Purchase error: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+        }
+    }
+
+    private String doBuy(String productId) {
         if (!isReady()) {
             if (!playStoreInstalled()) {
                 return simpleResult(false, "Google Play Store is not installed on this device, so billing is unavailable.");
@@ -158,7 +167,11 @@ public class BillingManager {
             if (offer == null) {
                 return simpleResult(false, "No subscription plan was found.");
             }
-            paramsBuilder.setOfferToken(offer.getOfferToken());
+            String offerToken = offer.getOfferToken();
+            if (offerToken == null || offerToken.isEmpty()) {
+                return simpleResult(false, "The subscription has no valid offer token. Check the base plan offer setup in Play Console.");
+            }
+            paramsBuilder.setOfferToken(offerToken);
         }
 
         final BillingFlowParams flowParams = BillingFlowParams.newBuilder()
@@ -311,17 +324,21 @@ public class BillingManager {
         if (offer.getOfferId() != null && offer.getOfferId().toLowerCase().contains("trial")) return true;
         if (offer.getOfferTags() != null) {
             for (String tag : offer.getOfferTags()) {
-                if (tag.toLowerCase().contains("trial")) return true;
+                if (tag != null && tag.toLowerCase().contains("trial")) return true;
             }
         }
-        for (ProductDetails.PricingPhase phase : offer.getPricingPhases().getPricingPhaseList()) {
+        ProductDetails.PricingPhases phases = offer.getPricingPhases();
+        if (phases == null) return false;
+        for (ProductDetails.PricingPhase phase : phases.getPricingPhaseList()) {
             if (phase.getPriceAmountMicros() == 0) return true;
         }
         return false;
     }
 
     private int trialDaysFromOffer(ProductDetails.SubscriptionOfferDetails offer) {
-        for (ProductDetails.PricingPhase phase : offer.getPricingPhases().getPricingPhaseList()) {
+        ProductDetails.PricingPhases phases = offer.getPricingPhases();
+        if (phases == null) return 3;
+        for (ProductDetails.PricingPhase phase : phases.getPricingPhaseList()) {
             if (phase.getPriceAmountMicros() == 0) {
                 int days = parsePeriodDays(phase.getBillingPeriod());
                 if (days > 0) return days;
@@ -331,11 +348,13 @@ public class BillingManager {
     }
 
     private ProductDetails.PricingPhase firstPaidPhase(ProductDetails.SubscriptionOfferDetails offer) {
-        for (ProductDetails.PricingPhase phase : offer.getPricingPhases().getPricingPhaseList()) {
+        ProductDetails.PricingPhases phases = offer.getPricingPhases();
+        if (phases == null) return null;
+        for (ProductDetails.PricingPhase phase : phases.getPricingPhaseList()) {
             if (phase.getPriceAmountMicros() > 0) return phase;
         }
-        List<ProductDetails.PricingPhase> phases = offer.getPricingPhases().getPricingPhaseList();
-        return phases.isEmpty() ? null : phases.get(phases.size() - 1);
+        List<ProductDetails.PricingPhase> phaseList = phases.getPricingPhaseList();
+        return phaseList.isEmpty() ? null : phaseList.get(phaseList.size() - 1);
     }
 
     /** Converts ISO-8601 durations like P3D / P1W / P1M into days (approximate for months/weeks). */

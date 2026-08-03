@@ -22,7 +22,6 @@ import com.android.billingclient.api.QueryPurchasesParams;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -207,15 +206,20 @@ public class BillingManager {
     private void queryProductDetails() {
         if (!isReady()) return;
 
+        // Billing 9 requires every query to contain products of a single type:
+        // subscriptions (SUBS) and one-time products (INAPP) must be queried separately.
+        queryProductDetailsFor(PRODUCT_MONTHLY, BillingClient.ProductType.SUBS);
+        queryProductDetailsFor(PRODUCT_LIFETIME, BillingClient.ProductType.INAPP);
+    }
+
+    private void queryProductDetailsFor(String productId, String productType) {
+        if (!isReady()) return;
+
         QueryProductDetailsParams params = QueryProductDetailsParams.newBuilder()
-                .setProductList(Arrays.asList(
+                .setProductList(Collections.singletonList(
                         QueryProductDetailsParams.Product.newBuilder()
-                                .setProductId(PRODUCT_MONTHLY)
-                                .setProductType(BillingClient.ProductType.SUBS)
-                                .build(),
-                        QueryProductDetailsParams.Product.newBuilder()
-                                .setProductId(PRODUCT_LIFETIME)
-                                .setProductType(BillingClient.ProductType.INAPP)
+                                .setProductId(productId)
+                                .setProductType(productType)
                                 .build()))
                 .build();
 

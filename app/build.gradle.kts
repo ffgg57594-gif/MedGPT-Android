@@ -69,5 +69,5 @@ dependencies {
 
     // Play Integrity API (for device integrity verification)
     implementation("com.google.android.play:integrity:1.3.0")
-    implementation("com.android.billingclient:billing:7.1.1")
+    implementation("com.android.billingclient:billing:9.1.0")
 }

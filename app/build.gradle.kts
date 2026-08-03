@@ -11,8 +11,8 @@ android {
         applicationId = "com.drarabi.medvision"
         minSdk = 24
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.2.4"
+        versionCode = 8
+        versionName = "1.2.5"
 
         // NDK/CMake for native security layer
         externalNativeBuild {
